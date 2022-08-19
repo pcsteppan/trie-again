@@ -1,8 +1,6 @@
 fn main() {
     let words = vec!["car", "cat", "cab", "dog", "door", "doom", "apple"];
 
-    let letter = "abc";
-
     let mut root: Trie = Trie {
         value: Option::None,
         children: vec![],
