@@ -1,3 +1,5 @@
+
+
 fn main() {
     let words = vec!["car", "cat", "cab", "dog", "door", "doom", "apple"];
 
@@ -88,4 +90,15 @@ impl Trie {
             child.print_helper(indent + 1, prefix);
         }
     }
+
+    fn new(value: char) -> Trie {
+        Trie {
+            value: Some(value),
+            is_word: false,
+            children: vec![]
+        }    
+    }
 }
+
+#[cfg(test)]
+mod tests;
