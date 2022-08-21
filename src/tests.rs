@@ -15,3 +15,13 @@ fn add_descendant() {
 
     assert!(trie.children.first().map_or(false, |b| b.value == Some('b')));
 }
+
+#[test]
+fn contains() {
+    let mut trie = Trie::new(' ');
+    trie.add("abcde");
+    trie.add("abxyz");
+
+    assert!(trie.contains("abcde"));
+    assert!(trie.contains("abxyz"));
+}

@@ -96,14 +96,24 @@ impl Trie {
         return matching_branches.next();
     }
 
-    fn contains(&self, string: &str) -> bool {
-        // split head tail
-
-        // base case, empty string -> true
-
-        // recursive case, get child is not none -> child.contains(tail)
-        //                           is none     -> false
-        return true;
+    fn contains(&mut self, string: &str) -> bool {
+        match string.len() {
+            0 => {
+                true
+            },
+            n => {
+                let (head, tail) = head_tail(string);
+                
+                match self.get_child(head) {
+                    None => {
+                        false
+                    },
+                    Some(child) => {
+                        child.contains(tail)
+                    }
+                }
+            }
+        }
     }
 }
 
