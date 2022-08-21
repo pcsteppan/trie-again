@@ -35,13 +35,7 @@ impl Trie {
                 let head: char = chars.next().unwrap();
                 let tail = chars;
 
-                let mut matching_branches = self
-                    .children
-                    .iter_mut()
-                    .filter(|child| child.value == Some(head))
-                    .collect::<Vec<_>>();
-
-                match matching_branches.first_mut() {
+                match self.get_child(head) {
                     None => {
                         let mut new_child = Trie {
                             value: Some(head),
@@ -97,6 +91,15 @@ impl Trie {
             is_word: false,
             children: vec![]
         }    
+    }
+
+    fn get_child(&mut self, value: char) -> Option<&mut Trie> {
+        let mut matching_branches = self
+                    .children
+                    .iter_mut()
+                    .filter(|child| child.value == Some(value));
+
+        return matching_branches.next();
     }
 }
 
