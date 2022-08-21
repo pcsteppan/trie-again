@@ -1,5 +1,4 @@
 
-
 fn main() {
     let words = vec!["car", "cat", "cab", "dog", "door", "doom", "apple"];
 
@@ -31,23 +30,18 @@ impl Trie {
             }
             // recursive case
             _ => {
-                let mut chars = string.chars();
-                let head: char = chars.next().unwrap();
-                let tail = chars;
+                let (head, tail) = head_tail(string);
 
                 match self.get_child(head) {
                     None => {
-                        let mut new_child = Trie {
-                            value: Some(head),
-                            children: vec![],
-                            is_word: false,
-                        };
+                        let mut new_child = Trie::new(head);
 
-                        new_child.add(tail.as_str());
+                        new_child.add(tail);
+                        
                         self.children.push(new_child);
                     }
                     Some(branch) => {
-                        branch.add(tail.as_str());
+                        branch.add(tail);
                     }
                 }
             }
@@ -101,6 +95,25 @@ impl Trie {
 
         return matching_branches.next();
     }
+
+    fn contains(&self, string: &str) -> bool {
+        // split head tail
+
+        // base case, empty string -> true
+
+        // recursive case, get child is not none -> child.contains(tail)
+        //                           is none     -> false
+        return true;
+    }
+}
+
+
+fn head_tail(string: &str) -> (char, &str) {
+    let mut chars = string.chars();
+    let head: char = chars.next().unwrap();
+    let tail = chars.as_str();
+
+    (head, tail)
 }
 
 #[cfg(test)]
