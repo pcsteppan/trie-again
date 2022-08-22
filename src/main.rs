@@ -15,6 +15,8 @@ fn main() {
     root.print();
 }
 
+#[derive(PartialEq)]
+#[derive(Debug)]
 struct Trie {
     value: Option<char>,
     children: Vec<Trie>,
@@ -96,24 +98,32 @@ impl Trie {
         return matching_branches.next();
     }
 
-    fn contains(&mut self, string: &str) -> bool {
+    fn get_word(&mut self, string: &str) -> Option<&mut Trie> {
         match string.len() {
             0 => {
-                true
+                Some(self)
             },
-            n => {
+            _ => {
                 let (head, tail) = head_tail(string);
                 
                 match self.get_child(head) {
                     None => {
-                        false
+                        None
                     },
                     Some(child) => {
-                        child.contains(tail)
+                        child.get_word(tail)
                     }
                 }
             }
         }
+    }
+
+    fn contains(&mut self, string: &str) -> bool {
+        self.get_word(string).is_some() 
+    }
+
+    fn has_word(&mut self, string: &str) -> bool {
+        self.get_word(string).map_or(false, |t| t.is_word)
     }
 }
 

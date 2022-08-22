@@ -25,3 +25,34 @@ fn contains() {
     assert!(trie.contains("abcde"));
     assert!(trie.contains("abxyz"));
 }
+
+#[test]
+fn has_word() {
+    let mut trie = Trie::new(' ');
+
+    trie.add("country");
+    assert!(trie.has_word("country"));
+
+    trie.add("county");
+    assert!(trie.has_word("county"));
+
+    assert!(!trie.has_word("count"));    
+}
+
+#[test]
+fn get_word() {
+    let mut trie = Trie::new(' ');
+
+    let y_node = Trie {
+        is_word: true,
+        children: vec![],
+        value: Some('y'),
+    };
+
+    let word = "country";
+    trie.add(word);
+    let res = trie.get_word(word);
+
+    assert_eq!(res, Some(y_node).as_mut());
+}
+
