@@ -1,6 +1,14 @@
+use std::env;
+use std::fs;
+use std::path::Path;
 
 fn main() {
-    let words = vec!["car", "cat", "cab", "dog", "door", "doom", "apple"];
+    let words_filename = Path::new("src/wordlist.txt");
+
+    let words_file_contents = fs::read_to_string(words_filename)
+        .expect("Couldn't read file at words_filename");
+
+    let words = words_file_contents.split("\n");
 
     let mut root: Trie = Trie {
         value: Option::None,
@@ -51,33 +59,38 @@ impl Trie {
     }
 
     fn print(&self) {
-        self.print_helper(0, ' ');
+        self.print_helper("", "", false);
     }
 
-    fn print_helper(&self, indent: usize, prefix: char) {
-        match self.value {
-            None => (),
-            Some(value) => {
-                println!(
-                    "{}{}{} {}",
-                    " ".repeat(indent - 1),
-                    prefix,
-                    value,
-                    if self.is_word { '✅' } else { ' ' }
-                );
+    fn print_helper(&self, prefix: &str, word: &str, is_last: bool) {
+        let mut new_prefix = prefix.clone().to_owned();
+        let mut new_wordpart = word.clone().to_owned();
+
+        if self.value != None {
+            print!("{}", prefix);
+
+            let current_node_value = self.value.unwrap();
+            new_wordpart.push(current_node_value);
+            
+            if is_last {
+                print!("└");
+                new_prefix.push(' ');
             }
+            else {
+                print!("├");
+                new_prefix.push('│');
+            }
+
+            println!(
+                "{} {}",
+                current_node_value,
+                if self.is_word { format!("{} {}", '✅', new_wordpart) } else { String::new() }
+            );
         }
-        for child in self.children.as_slice() {
-            let prefix = if self.value == None {
-                '>'
-            } else {
-                if self.children.len() > 1 {
-                    '├'
-                } else {
-                    '└'
-                }
-            };
-            child.print_helper(indent + 1, prefix);
+
+        for (i, child) in self.children.as_slice().iter().enumerate() {
+            let is_last = i == self.children.len()-1;
+            child.print_helper(&new_prefix, &new_wordpart, is_last);
         }
     }
 
