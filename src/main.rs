@@ -10,11 +10,7 @@ fn main() {
 
     let words = words_file_contents.split("\n");
 
-    let mut root: Trie = Trie {
-        value: Option::None,
-        children: vec![],
-        is_word: false,
-    };
+    let mut root: Trie = Trie::new_root();
 
     for word in words {
         root.add(word);
@@ -32,6 +28,22 @@ struct Trie {
 }
 
 impl Trie {
+    fn new_root() -> Trie {
+        Trie {
+            value: None,
+            is_word: false,
+            children: vec![]
+        }    
+    }
+    
+    fn new(value: char) -> Trie {
+        Trie {
+            value: Some(value),
+            is_word: false,
+            children: vec![]
+        }    
+    }
+
     fn add(&mut self, string: &str) {
         match string.len() {
             // base case
@@ -62,6 +74,7 @@ impl Trie {
         self.print_helper("", "", false);
     }
 
+    // TODO: add variant that collapses single-child nodes into same line
     fn print_helper(&self, prefix: &str, word: &str, is_last: bool) {
         let mut new_prefix = prefix.clone().to_owned();
         let mut new_wordpart = word.clone().to_owned();
@@ -92,14 +105,6 @@ impl Trie {
             let is_last = i == self.children.len()-1;
             child.print_helper(&new_prefix, &new_wordpart, is_last);
         }
-    }
-
-    fn new(value: char) -> Trie {
-        Trie {
-            value: Some(value),
-            is_word: false,
-            children: vec![]
-        }    
     }
 
     fn get_child(&mut self, value: char) -> Option<&mut Trie> {
@@ -137,6 +142,29 @@ impl Trie {
 
     fn has_word(&mut self, string: &str) -> bool {
         self.get_word(string).map_or(false, |t| t.is_word)
+    }
+
+    fn get_all_words(&self) -> Vec<String> {
+        let mut all_words = Vec::new();
+        let mut frontier: Vec<(&Trie, String)> = Vec::new();
+        frontier.push((&self, String::new()));
+
+        while !frontier.is_empty() {
+            let curr_node = frontier.pop().unwrap();
+            let mut curr_word = curr_node.1;
+            if curr_node.0.value.is_some() {
+                curr_word += curr_node.0.value.unwrap().to_string().as_str();
+            }
+
+            if curr_node.0.is_word {
+                all_words.push(curr_word.clone());
+            }
+            for child in curr_node.0.children.as_slice() {
+                frontier.push((child, curr_word.clone()));
+            }
+        }
+
+        return all_words;
     }
 }
 

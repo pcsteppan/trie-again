@@ -18,7 +18,7 @@ fn add_descendant() {
 
 #[test]
 fn contains() {
-    let mut trie = Trie::new(' ');
+    let mut trie = Trie::new_root();
     trie.add("abcde");
     trie.add("abxyz");
 
@@ -28,7 +28,7 @@ fn contains() {
 
 #[test]
 fn has_word() {
-    let mut trie = Trie::new(' ');
+    let mut trie = Trie::new_root();
 
     trie.add("country");
     assert!(trie.has_word("country"));
@@ -41,7 +41,7 @@ fn has_word() {
 
 #[test]
 fn get_word() {
-    let mut trie = Trie::new(' ');
+    let mut trie = Trie::new_root();
 
     let y_node = Trie {
         is_word: true,
@@ -54,5 +54,30 @@ fn get_word() {
     let res = trie.get_word(word);
 
     assert_eq!(res, Some(y_node).as_mut());
+}
+
+#[test]
+fn get_all_words() {
+    let mut trie = Trie::new_root();
+
+    let words_to_add = [
+        "aa",
+        "ab",
+        "abc",
+        "ba",
+        "bb",
+        "bbc"
+    ];
+
+    for word in words_to_add {
+        trie.add(word);
+    }
+
+    let all_words_in_trie = trie.get_all_words();
+
+    for word in all_words_in_trie {
+        let word_as_str = word.as_str();
+        assert!(words_to_add.contains(&word_as_str));
+    }
 }
 
