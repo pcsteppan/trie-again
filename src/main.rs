@@ -1,6 +1,7 @@
-use std::env;
+#[allow(dead_code)]
+
 use std::fs;
-use std::path::Path;
+use std::{path::Path, collections::HashMap};
 
 fn main() {
     let words_filename = Path::new("src/wordlist.txt");
@@ -16,7 +17,16 @@ fn main() {
         root.add(word);
     }
 
-    root.print();
+    let frequencies = root.get_all_substring_frequencies(6);
+    let mut count_vec: Vec<_> = frequencies.iter().collect();
+
+    count_vec.sort_by(|a, b| b.1.cmp(a.1));
+
+    for (k, v) in &count_vec[0..10] {
+        println!("{}:\t{}", k, v);
+    }
+
+    // root.print();
 }
 
 #[derive(PartialEq)]
@@ -150,21 +160,49 @@ impl Trie {
         frontier.push((&self, String::new()));
 
         while !frontier.is_empty() {
-            let curr_node = frontier.pop().unwrap();
-            let mut curr_word = curr_node.1;
-            if curr_node.0.value.is_some() {
-                curr_word += curr_node.0.value.unwrap().to_string().as_str();
+            let (curr_node, mut curr_word) = frontier.pop().unwrap();
+            if curr_node.value.is_some() {
+                curr_word += curr_node.value.unwrap().to_string().as_str();
             }
 
-            if curr_node.0.is_word {
+            if curr_node.is_word {
                 all_words.push(curr_word.clone());
             }
-            for child in curr_node.0.children.as_slice() {
+            for child in curr_node.children.as_slice() {
                 frontier.push((child, curr_word.clone()));
             }
         }
 
         return all_words;
+    }
+
+    fn get_all_substring_frequencies(&self, substring_length: usize) -> HashMap<String, u16> {
+        let mut frequencies: HashMap<String, u16> = HashMap::new();
+
+        let mut frontier: Vec<(&Trie, String)> = Vec::new();
+        frontier.push((&self, String::new()));
+
+        while !frontier.is_empty() {
+            let (curr_node, mut curr_word) = frontier.pop().unwrap();
+            if curr_node.value.is_some() {
+                let new_value = curr_node.value.unwrap().to_string();
+                if curr_word.len() >= substring_length {
+                    curr_word = curr_word[1..].to_string();
+                }
+                curr_word += new_value.as_str();
+            }
+
+            if curr_word.len() == substring_length {
+                let incremented_frequency = frequencies.get(&curr_word).unwrap_or(&0) + 1;
+                frequencies.insert(curr_word.clone(), incremented_frequency);
+            }
+
+            for child in curr_node.children.as_slice() {
+                frontier.push((child, curr_word.clone()));
+            }
+        }
+
+        return frequencies;
     }
 }
 
