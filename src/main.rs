@@ -24,6 +24,12 @@ fn main() {
         println!("{}", word);
     }
 
+    let all_freqs_of_length_3 = root.get_all_substring_frequencies(3);
+
+    for (k, v) in all_freqs_of_length_3.into_iter() {
+        println!("{}: {}", k, v);
+    }
+
     // root.print();
 }
 
@@ -33,6 +39,8 @@ struct Trie {
     children: Vec<Trie>,
     is_word: bool,
 }
+
+type WordFrequencies = HashMap<String, u16>;
 
 impl Trie {
     fn new_root() -> Trie {
@@ -147,34 +155,37 @@ impl Trie {
     fn has_word(&mut self, string: &str) -> bool {
         self.get_word(string).map_or(false, |t| t.is_word)
     }
+    
+    fn get_all_substring_frequencies(&self, substring_length: usize) -> WordFrequencies {
+        let transform = |u: &String, trie: &Trie| {
+            let mut word_freqs = HashMap::new();
 
-    fn get_all_substring_frequencies(&self, substring_length: usize) -> HashMap<String, u16> {
-        let mut frequencies: HashMap<String, u16> = HashMap::new();
-
-        let mut frontier: Vec<(&Trie, String)> = Vec::new();
-        frontier.push((&self, String::new()));
-
-        while !frontier.is_empty() {
-            let (curr_node, mut curr_word) = frontier.pop().unwrap();
-            if curr_node.value.is_some() {
-                let new_value = curr_node.value.unwrap().to_string();
-                if curr_word.len() >= substring_length {
-                    curr_word = curr_word[1..].to_string();
-                }
-                curr_word += new_value.as_str();
+            let mut new_word = u.to_owned();
+            if trie.value.is_some() {
+                new_word += trie.value.unwrap().to_string().as_str();
             }
 
-            if curr_word.len() == substring_length {
-                let incremented_frequency = frequencies.get(&curr_word).unwrap_or(&0) + 1;
-                frequencies.insert(curr_word.clone(), incremented_frequency);
+            let new_word_len = new_word.len();
+            if new_word_len >= substring_length {
+                new_word = new_word[new_word_len-substring_length..].to_string();
+                word_freqs.insert(new_word.clone(), 1);
             }
 
-            for child in curr_node.children.as_slice() {
-                frontier.push((child, curr_word.clone()));
-            }
-        }
+            (new_word, word_freqs)
+        };
 
-        return frequencies;
+        let merge = |x: WordFrequencies, y: WordFrequencies| {
+            let mut new_word_freqs = WordFrequencies::new();
+
+            for key in x.clone().into_keys().chain(y.clone().into_keys()) {
+                new_word_freqs.insert(key.clone(), x.get(&key).unwrap_or(&0) + y.get(&key).unwrap_or(&0));
+            }
+
+            new_word_freqs
+        };
+
+        let str = String::new();
+        self.traverse(&transform, &merge, &str).unwrap_or(WordFrequencies::new())
     }
 
     fn get_all_words(&self) -> Vec<String> {
