@@ -177,25 +177,6 @@ impl Trie {
         return frequencies;
     }
 
-    fn traverse<T, U, V>(&self, transform: &T, u: &U) -> Option<V>
-        where V: IntoIterator + FromIterator<<V as IntoIterator>::Item>, 
-              T: Fn(&U, &Trie) -> (U, V) {
-        let u_delta: (U, V) = transform(u, self);
-        
-        let results = self.children
-            .iter()
-            .map(|child| child.traverse(transform, &u_delta.0))
-            .filter_map(|res| res)
-            .chain(std::iter::once(u_delta.1));
-
-        let result = results
-            .reduce(|acc, child_result| {
-                acc.into_iter().chain(child_result).collect()
-            });
-
-        result
-    }
-
     fn get_all_words(&self) -> Vec<String> {
         let transform = |u: &String, trie: &Trie| {
             let mut aggregate_words: Vec<String> = Vec::new();
@@ -212,6 +193,21 @@ impl Trie {
         let str = String::new();
 
         self.traverse(&transform, &str).unwrap_or(Vec::new())
+    }
+
+    fn traverse<T, U, V>(&self, transform: &T, u: &U) -> Option<V>
+        where V: IntoIterator + FromIterator<<V as IntoIterator>::Item>, 
+              T: Fn(&U, &Trie) -> (U, V) {
+        let u_delta: (U, V) = transform(u, self);
+        
+        self.children
+            .iter()
+            .map(|child| child.traverse(transform, &u_delta.0))
+            .filter_map(|res| res)
+            .chain(std::iter::once(u_delta.1))
+            .reduce(|acc, child_result| {
+                acc.into_iter().chain(child_result).collect()
+            })
     }
 }
 
