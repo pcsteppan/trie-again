@@ -168,7 +168,8 @@ impl Trie {
             let new_word_len = new_word.len();
             if new_word_len >= substring_length {
                 new_word = new_word[new_word_len-substring_length..].to_string();
-                word_freqs.insert(new_word.clone(), 1);
+                let is_word_increment = if trie.is_word {1} else {0};
+                word_freqs.insert(new_word.clone(), trie.children.len() as u16 + is_word_increment);
             }
 
             (new_word, word_freqs)

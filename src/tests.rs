@@ -81,3 +81,30 @@ fn get_all_words() {
     }
 }
 
+#[test]
+fn get_all_substring_frequencies() {
+    let mut trie = Trie::new_root();
+
+    let words_to_add = [
+        "aa",
+        "ab",
+        "abc",
+        "ba",
+        "bb",
+        "bbc"
+    ];
+
+    for word in words_to_add {
+        trie.add(word);
+    }
+
+    let dichar_freqs = trie.get_all_substring_frequencies(2);
+
+    assert_eq!(dichar_freqs.get("aa").unwrap_or(&0).to_owned(), 1);
+    assert_eq!(dichar_freqs.get("ab").unwrap_or(&0).to_owned(), 2);
+    assert_eq!(dichar_freqs.get("ac").unwrap_or(&0).to_owned(), 0);
+    assert_eq!(dichar_freqs.get("bc").unwrap_or(&0).to_owned(), 2);
+    assert_eq!(dichar_freqs.get("ba").unwrap_or(&0).to_owned(), 1);
+    assert_eq!(dichar_freqs.get("bb").unwrap_or(&0).to_owned(), 2);
+}
+
