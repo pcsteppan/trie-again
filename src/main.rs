@@ -190,24 +190,23 @@ impl Trie {
             (curr_word, aggregate_words)
         };
 
-        let str = String::new();
+        let merge = |x: Vec<String>, y: Vec<String>| x.into_iter().chain(y).collect();
 
-        self.traverse(&transform, &str).unwrap_or(Vec::new())
+        let str = String::new();
+        self.traverse(&transform, &merge, &str).unwrap_or(Vec::new())
     }
 
-    fn traverse<T, U, V>(&self, transform: &T, u: &U) -> Option<V>
-        where V: IntoIterator + FromIterator<<V as IntoIterator>::Item>, 
-              T: Fn(&U, &Trie) -> (U, V) {
+    fn traverse<T, U, V, W>(&self, transform: &T, merge: &W, u: &U) -> Option<V> 
+        where T: Fn(&U, &Trie) -> (U, V),
+              W: Fn(V, V) -> V {
         let u_delta: (U, V) = transform(u, self);
         
         self.children
             .iter()
-            .map(|child| child.traverse(transform, &u_delta.0))
+            .map(|child| child.traverse(transform, merge, &u_delta.0))
             .filter_map(|res| res)
             .chain(std::iter::once(u_delta.1))
-            .reduce(|acc, child_result| {
-                acc.into_iter().chain(child_result).collect()
-            })
+            .reduce(merge)
     }
 }
 
