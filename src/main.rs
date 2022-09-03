@@ -1,15 +1,15 @@
-#[allow(dead_code)]
+#![allow(dead_code)]
 
-use std::fs;
-use std::{path::Path, collections::HashMap};
+use std::{fs};
+use std::{collections::HashMap, path::Path};
 
 fn main() {
-    let words_filename = Path::new("src/wordlist.txt");
+    let words_filename = Path::new("src/data/most_common_10_000.txt");
 
-    let words_file_contents = fs::read_to_string(words_filename)
-        .expect("Couldn't read file at words_filename");
+    let words_file_contents =
+        fs::read_to_string(words_filename).expect("Couldn't read file at words_filename");
 
-    let words = words_file_contents.split("\n");
+    let words = words_file_contents.split("\n").filter(|w| w.len() >= 4);
 
     let mut root: Trie = Trie::new_root();
 
@@ -17,20 +17,17 @@ fn main() {
         root.add(word);
     }
 
-    let frequencies = root.get_all_substring_frequencies(6);
-    let mut count_vec: Vec<_> = frequencies.iter().collect();
+    let all_words = root.get_all_words();
+    println!("{}", all_words.len());
 
-    count_vec.sort_by(|a, b| b.1.cmp(a.1));
-
-    for (k, v) in &count_vec[0..10] {
-        println!("{}:\t{}", k, v);
+    for word in all_words {
+        println!("{}", word);
     }
 
     // root.print();
 }
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 struct Trie {
     value: Option<char>,
     children: Vec<Trie>,
@@ -42,16 +39,16 @@ impl Trie {
         Trie {
             value: None,
             is_word: false,
-            children: vec![]
-        }    
+            children: vec![],
+        }
     }
-    
+
     fn new(value: char) -> Trie {
         Trie {
             value: Some(value),
             is_word: false,
-            children: vec![]
-        }    
+            children: vec![],
+        }
     }
 
     fn add(&mut self, string: &str) {
@@ -69,7 +66,7 @@ impl Trie {
                         let mut new_child = Trie::new(head);
 
                         new_child.add(tail);
-                        
+
                         self.children.push(new_child);
                     }
                     Some(branch) => {
@@ -94,12 +91,11 @@ impl Trie {
 
             let current_node_value = self.value.unwrap();
             new_wordpart.push(current_node_value);
-            
+
             if is_last {
                 print!("└");
                 new_prefix.push(' ');
-            }
-            else {
+            } else {
                 print!("├");
                 new_prefix.push('│');
             }
@@ -107,73 +103,49 @@ impl Trie {
             println!(
                 "{} {}",
                 current_node_value,
-                if self.is_word { format!("{} {}", '✅', new_wordpart) } else { String::new() }
+                if self.is_word {
+                    format!("{} {}", '✅', new_wordpart)
+                } else {
+                    String::new()
+                }
             );
         }
 
         for (i, child) in self.children.as_slice().iter().enumerate() {
-            let is_last = i == self.children.len()-1;
+            let is_last = i == self.children.len() - 1;
             child.print_helper(&new_prefix, &new_wordpart, is_last);
         }
     }
 
     fn get_child(&mut self, value: char) -> Option<&mut Trie> {
         let mut matching_branches = self
-                    .children
-                    .iter_mut()
-                    .filter(|child| child.value == Some(value));
+            .children
+            .iter_mut()
+            .filter(|child| child.value == Some(value));
 
         return matching_branches.next();
     }
 
     fn get_word(&mut self, string: &str) -> Option<&mut Trie> {
         match string.len() {
-            0 => {
-                Some(self)
-            },
+            0 => Some(self),
             _ => {
                 let (head, tail) = head_tail(string);
-                
+
                 match self.get_child(head) {
-                    None => {
-                        None
-                    },
-                    Some(child) => {
-                        child.get_word(tail)
-                    }
+                    None => None,
+                    Some(child) => child.get_word(tail),
                 }
             }
         }
     }
 
     fn contains(&mut self, string: &str) -> bool {
-        self.get_word(string).is_some() 
+        self.get_word(string).is_some()
     }
 
     fn has_word(&mut self, string: &str) -> bool {
         self.get_word(string).map_or(false, |t| t.is_word)
-    }
-
-    fn get_all_words(&self) -> Vec<String> {
-        let mut all_words = Vec::new();
-        let mut frontier: Vec<(&Trie, String)> = Vec::new();
-        frontier.push((&self, String::new()));
-
-        while !frontier.is_empty() {
-            let (curr_node, mut curr_word) = frontier.pop().unwrap();
-            if curr_node.value.is_some() {
-                curr_word += curr_node.value.unwrap().to_string().as_str();
-            }
-
-            if curr_node.is_word {
-                all_words.push(curr_word.clone());
-            }
-            for child in curr_node.children.as_slice() {
-                frontier.push((child, curr_word.clone()));
-            }
-        }
-
-        return all_words;
     }
 
     fn get_all_substring_frequencies(&self, substring_length: usize) -> HashMap<String, u16> {
@@ -204,8 +176,44 @@ impl Trie {
 
         return frequencies;
     }
-}
 
+    fn traverse<T, U, V>(&self, transform: &T, u: &U) -> Option<V>
+        where V: IntoIterator + FromIterator<<V as IntoIterator>::Item>, 
+              T: Fn(&U, &Trie) -> (U, V) {
+        let u_delta: (U, V) = transform(u, self);
+        
+        let results = self.children
+            .iter()
+            .map(|child| child.traverse(transform, &u_delta.0))
+            .filter_map(|res| res)
+            .chain(std::iter::once(u_delta.1));
+
+        let result = results
+            .reduce(|acc, child_result| {
+                acc.into_iter().chain(child_result).collect()
+            });
+
+        result
+    }
+
+    fn get_all_words(&self) -> Vec<String> {
+        let transform = |u: &String, trie: &Trie| {
+            let mut aggregate_words: Vec<String> = Vec::new();
+
+            let curr_word = if trie.value.is_some() {u.to_owned() + &trie.value.unwrap().to_string()} else {u.to_owned()};
+
+            if trie.is_word {
+                aggregate_words.push(curr_word.clone());
+            }
+
+            (curr_word, aggregate_words)
+        };
+
+        let str = String::new();
+
+        self.traverse(&transform, &str).unwrap_or(Vec::new())
+    }
+}
 
 fn head_tail(string: &str) -> (char, &str) {
     let mut chars = string.chars();
