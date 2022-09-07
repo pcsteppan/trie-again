@@ -108,3 +108,31 @@ fn get_all_substring_frequencies() {
     assert_eq!(dichar_freqs.get("bb").unwrap_or(&0).to_owned(), 2);
 }
 
+#[test]
+fn get_all_words_with_containing_substring() {
+    let mut root = Trie::new_root();
+
+    root.add("beast");
+
+    let es_words = vec![
+        "test",
+        "tester",
+        "best",
+        "essen",
+        "fries"
+    ];
+
+    for es_word in es_words.as_slice() {
+        root.add(es_word);
+    }
+
+    let all_words_with_es_substring = root.get_all_words_with_containing_substring("es");
+
+    for word in es_words {
+        let word_as_string = word.to_string();
+        assert!(all_words_with_es_substring.contains(&word_as_string));
+    }
+
+    let beast = "beast".to_string();
+    assert!(!all_words_with_es_substring.contains(&beast));
+}

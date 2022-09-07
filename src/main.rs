@@ -191,21 +191,50 @@ impl Trie {
 
     fn get_all_words(&self) -> Vec<String> {
         let transform = |u: &String, trie: &Trie| {
-            let mut aggregate_words: Vec<String> = Vec::new();
-
-            let curr_word = if trie.value.is_some() {u.to_owned() + &trie.value.unwrap().to_string()} else {u.to_owned()};
-
-            if trie.is_word {
-                aggregate_words.push(curr_word.clone());
-            }
-
+            let curr_word = if trie.value.is_some() {
+                u.to_owned() + &trie.value.unwrap().to_string()
+            } else {
+                u.to_owned()
+            };
+            let aggregate_words = if trie.is_word {
+                vec![curr_word.clone()]
+            } else {
+                Vec::new()
+            };
+            
             (curr_word, aggregate_words)
+        };
+
+        let merge = 
+            |x: Vec<String>, y: Vec<String>| x.into_iter().chain(y).collect();
+
+        let str = String::new();
+        self.traverse(&transform, &merge, &str).unwrap_or(Vec::new())
+    }
+
+    fn get_all_words_with_containing_substring(&self, substring: &str) -> Vec<String> {
+        let transform = |u: &(String, bool), trie: &Trie| {
+            let curr_word = if trie.value.is_some() {
+                u.0.to_owned() + &trie.value.unwrap().to_string()
+            } else {
+                u.0.to_owned()
+            };
+
+            let should_add = u.1 || curr_word.contains(substring); 
+
+            let aggregate_words = if should_add && trie.is_word {
+                vec![curr_word.clone()]
+            } else {
+                Vec::new()
+            };
+
+            ((curr_word, should_add), aggregate_words)
         };
 
         let merge = |x: Vec<String>, y: Vec<String>| x.into_iter().chain(y).collect();
 
-        let str = String::new();
-        self.traverse(&transform, &merge, &str).unwrap_or(Vec::new())
+        let u = (String::new(), false);
+        self.traverse(&transform, &merge, &u).unwrap_or(Vec::new())
     }
 
     fn traverse<T, U, V, W>(&self, transform: &T, merge: &W, u: &U) -> Option<V> 
