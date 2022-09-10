@@ -24,11 +24,11 @@ fn main() {
         println!("{}", word);
     }
 
-    let all_freqs_of_length_3 = root.get_all_substring_frequencies(3);
+    // let all_freqs_of_length_3 = root.get_all_substring_frequencies(3);
 
-    for (k, v) in all_freqs_of_length_3.into_iter() {
-        println!("{}: {}", k, v);
-    }
+    // for (k, v) in all_freqs_of_length_3.into_iter() {
+    //     println!("{}: {}", k, v);
+    // }
 
     // root.print();
 }
@@ -125,6 +125,56 @@ impl Trie {
         }
     }
 
+    /*
+    traverse takes three functions:
+    +   transform of type FT:
+        a function which calculates the aggregated value (A) we want to see returned on each node,
+        e.g, this node if it is a word and the transformed value meets some criteria
+        and a transformed value for children to use in calculating their own values (T),
+        e.g, a substring that is being built during the traversal of the trie
+    
+    +   merge of type FM:
+        a function which can be used to reduce all returns (of type A) into one aggregate/accumulated thing
+    
+    +   recurse of type FR:
+        a function which chooses which of the trie's children to recursively call traverse on, e.g,
+        recursively call trie's children if current transformed value (type T) meets some criteria
+    
+    traverse utilizes two generics throughout its functions
+    +   A:
+        the return type of the traversal at each trie node
+
+    +   T:
+        a transformed/derived state calculated from the state of the current trie node, 
+        and the parent trie node's T value, passed to it's children as t,
+        must be clonable until I can figure how to make that not necessary
+
+    */
+
+    fn traverse<A, T: Clone, FT, FM, FR>(&self, transform: &FT, merge: &FM, recurse: &FR, t: &T) -> Option<A> 
+        where FT: Fn(&Trie, &T) -> (T, A),
+              FM: Fn(A, A) -> A,
+              FR: Fn(&dyn Fn(&Trie) -> Option<A>, &Trie, (T, A)) -> Vec<A> {
+        let (t_prime, acc): (T, A) = transform(self, t);
+
+        let recursive_call = |child: &Trie| {
+            child.traverse(transform, merge, recurse, &t_prime.clone())
+        };
+        
+        recurse(&recursive_call, self, (t_prime.clone(), acc))
+            .into_iter()
+            .reduce(merge)
+    }
+
+    fn traverse_common_recurse<A, T>(recursive_call: &dyn Fn(&Trie) -> Option<A>, trie: &Trie, curr_transform : (T, A)) -> Vec<A> {
+        trie.children
+            .iter()
+            .map(recursive_call)
+            .filter_map(|res| res)
+            .chain(std::iter::once(curr_transform.1))
+            .collect()
+    }
+    
     fn get_child(&mut self, value: char) -> Option<&mut Trie> {
         let mut matching_branches = self
             .children
@@ -157,13 +207,17 @@ impl Trie {
     }
     
     fn get_all_substring_frequencies(&self, substring_length: usize) -> WordFrequencies {
-        let transform = |u: &String, trie: &Trie| {
+        type A = WordFrequencies;
+        type T = String;
+
+        let transform = |trie: &Trie, t: &String| {
             let mut word_freqs = HashMap::new();
 
-            let mut new_word = u.to_owned();
-            if trie.value.is_some() {
-                new_word += trie.value.unwrap().to_string().as_str();
-            }
+            let mut new_word = if trie.value.is_none() {
+                t.to_owned()
+            } else {
+                t.to_owned() + trie.value.unwrap().to_string().as_str()
+            };
 
             let new_word_len = new_word.len();
             if new_word_len >= substring_length {
@@ -186,15 +240,18 @@ impl Trie {
         };
 
         let str = String::new();
-        self.traverse(&transform, &merge, &str).unwrap_or(WordFrequencies::new())
+        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or(WordFrequencies::new())
     }
 
     fn get_all_words(&self) -> Vec<String> {
-        let transform = |u: &String, trie: &Trie| {
+        type A = Vec<String>;
+        type T = String;
+
+        let transform = |trie: &Trie, t: &T| {
             let curr_word = if trie.value.is_some() {
-                u.to_owned() + &trie.value.unwrap().to_string()
+                t.to_owned() + &trie.value.unwrap().to_string()
             } else {
-                u.to_owned()
+                t.to_owned()
             };
             let aggregate_words = if trie.is_word {
                 vec![curr_word.clone()]
@@ -205,22 +262,24 @@ impl Trie {
             (curr_word, aggregate_words)
         };
 
-        let merge = 
-            |x: Vec<String>, y: Vec<String>| x.into_iter().chain(y).collect();
+        let merge = |x: A, y: A| x.into_iter().chain(y).collect();
 
         let str = String::new();
-        self.traverse(&transform, &merge, &str).unwrap_or(Vec::new())
+        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or(Vec::new())
     }
 
     fn get_all_words_with_containing_substring(&self, substring: &str) -> Vec<String> {
-        let transform = |u: &(String, bool), trie: &Trie| {
+        type A = Vec<String>;
+        type T = (String, bool);
+
+        let transform = |trie: &Trie, t: &T| -> (T, A){
             let curr_word = if trie.value.is_some() {
-                u.0.to_owned() + &trie.value.unwrap().to_string()
+                t.0.to_owned() + &trie.value.unwrap().to_string()
             } else {
-                u.0.to_owned()
+                t.0.to_owned()
             };
 
-            let should_add = u.1 || curr_word.contains(substring); 
+            let should_add = t.1 || curr_word.contains(substring); 
 
             let aggregate_words = if should_add && trie.is_word {
                 vec![curr_word.clone()]
@@ -233,21 +292,8 @@ impl Trie {
 
         let merge = |x: Vec<String>, y: Vec<String>| x.into_iter().chain(y).collect();
 
-        let u = (String::new(), false);
-        self.traverse(&transform, &merge, &u).unwrap_or(Vec::new())
-    }
-
-    fn traverse<T, U, V, W>(&self, transform: &T, merge: &W, u: &U) -> Option<V> 
-        where T: Fn(&U, &Trie) -> (U, V),
-              W: Fn(V, V) -> V {
-        let u_delta: (U, V) = transform(u, self);
-        
-        self.children
-            .iter()
-            .map(|child| child.traverse(transform, merge, &u_delta.0))
-            .filter_map(|res| res)
-            .chain(std::iter::once(u_delta.1))
-            .reduce(merge)
+        let t: T = (String::new(), false);
+        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &t).unwrap_or(Vec::new())
     }
 }
 
