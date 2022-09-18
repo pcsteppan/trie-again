@@ -3,5 +3,17 @@
 version = 3
 
 [[package]]
-name = "trie-again"
+name = "game"
+version = "0.1.0"
+dependencies = [
+ "gamestate",
+ "trie",
+]
+
+[[package]]
+name = "gamestate"
+version = "0.1.0"
+
+[[package]]
+name = "trie"
 version = "0.1.0"

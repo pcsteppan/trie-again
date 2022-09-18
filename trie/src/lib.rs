@@ -1,49 +1,16 @@
-#![allow(dead_code)]
-
-use std::{fs};
-use std::{collections::HashMap, path::Path};
-
-fn main() {
-    let words_filename = Path::new("src/data/most_common_10_000.txt");
-
-    let words_file_contents =
-        fs::read_to_string(words_filename).expect("Couldn't read file at words_filename");
-
-    let words = words_file_contents.split("\n").filter(|w| w.len() >= 4);
-
-    let mut root: Trie = Trie::new_root();
-
-    for word in words {
-        root.add(word);
-    }
-
-    let all_words = root.get_all_words();
-    println!("{}", all_words.len());
-
-    for word in all_words {
-        println!("{}", word);
-    }
-
-    // let all_freqs_of_length_3 = root.get_all_substring_frequencies(3);
-
-    // for (k, v) in all_freqs_of_length_3.into_iter() {
-    //     println!("{}: {}", k, v);
-    // }
-
-    // root.print();
-}
+use std::{collections::HashMap};
 
 #[derive(PartialEq, Debug)]
-struct Trie {
-    value: Option<char>,
-    children: Vec<Trie>,
-    is_word: bool,
+pub struct Trie {
+    pub value: Option<char>,
+    pub children: Vec<Trie>,
+    pub is_word: bool,
 }
 
 type WordFrequencies = HashMap<String, u16>;
 
 impl Trie {
-    fn new_root() -> Trie {
+    pub fn new_root() -> Trie {
         Trie {
             value: None,
             is_word: false,
@@ -51,7 +18,7 @@ impl Trie {
         }
     }
 
-    fn new(value: char) -> Trie {
+    pub fn new(value: char) -> Trie {
         Trie {
             value: Some(value),
             is_word: false,
@@ -59,7 +26,7 @@ impl Trie {
         }
     }
 
-    fn add(&mut self, string: &str) {
+    pub fn add(&mut self, string: &str) {
         match string.len() {
             // base case
             0 => {
@@ -85,12 +52,12 @@ impl Trie {
         }
     }
 
-    fn print(&self) {
+    pub fn print(&self) {
         self.print_helper("", "", false);
     }
 
     // TODO: add variant that collapses single-child nodes into same line
-    fn print_helper(&self, prefix: &str, word: &str, is_last: bool) {
+    pub fn print_helper(&self, prefix: &str, word: &str, is_last: bool) {
         let mut new_prefix = prefix.clone().to_owned();
         let mut new_wordpart = word.clone().to_owned();
 
@@ -175,7 +142,7 @@ impl Trie {
             .collect()
     }
     
-    fn get_child(&mut self, value: char) -> Option<&mut Trie> {
+    pub fn get_child(&mut self, value: char) -> Option<&mut Trie> {
         let mut matching_branches = self
             .children
             .iter_mut()
@@ -184,7 +151,7 @@ impl Trie {
         return matching_branches.next();
     }
 
-    fn get_word(&mut self, string: &str) -> Option<&mut Trie> {
+    pub fn get_word(&mut self, string: &str) -> Option<&mut Trie> {
         match string.len() {
             0 => Some(self),
             _ => {
@@ -198,15 +165,15 @@ impl Trie {
         }
     }
 
-    fn contains(&mut self, string: &str) -> bool {
+    pub fn contains(&mut self, string: &str) -> bool {
         self.get_word(string).is_some()
     }
 
-    fn has_word(&mut self, string: &str) -> bool {
+    pub fn has_word(&mut self, string: &str) -> bool {
         self.get_word(string).map_or(false, |t| t.is_word)
     }
     
-    fn get_all_substring_frequencies(&self, substring_length: usize) -> WordFrequencies {
+    pub fn get_all_substring_frequencies(&self, substring_length: usize) -> WordFrequencies {
         type A = WordFrequencies;
         type T = String;
 
@@ -243,7 +210,7 @@ impl Trie {
         self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or(WordFrequencies::new())
     }
 
-    fn get_all_words(&self) -> Vec<String> {
+    pub fn get_all_words(&self) -> Vec<String> {
         type A = Vec<String>;
         type T = String;
 
@@ -268,7 +235,7 @@ impl Trie {
         self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or(Vec::new())
     }
 
-    fn get_all_words_with_containing_substring(&self, substring: &str) -> Vec<String> {
+    pub fn get_all_words_with_containing_substring(&self, substring: &str) -> Vec<String> {
         type A = Vec<String>;
         type T = (String, bool);
 
