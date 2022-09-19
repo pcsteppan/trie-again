@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 trie = { path = "../trie" }
 gamestate = { path = "../gamestate" }
+rand = "0.8.5"
+regex = "1.6.0"
