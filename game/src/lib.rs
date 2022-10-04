@@ -22,7 +22,7 @@ impl GameController {
             .collect::<Vec<(String, u16)>>();
         substring_frequencies.sort_by(|a, b| b.1.cmp(&a.1));
         
-        let mut eligible_substrings = &mut substring_frequencies[0..20];
+        let eligible_substrings = &mut substring_frequencies[0..20];
         
         let mut rng = rand::thread_rng();
         eligible_substrings.shuffle(&mut rng);

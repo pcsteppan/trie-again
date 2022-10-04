@@ -136,8 +136,7 @@ impl Trie {
     fn traverse_common_recurse<A, T>(recursive_call: &dyn Fn(&Trie) -> Option<A>, trie: &Trie, curr_transform : (T, A)) -> Vec<A> {
         trie.children
             .iter()
-            .map(recursive_call)
-            .filter_map(|res| res)
+            .flat_map(recursive_call)
             .chain(std::iter::once(curr_transform.1))
             .collect()
     }
@@ -148,7 +147,7 @@ impl Trie {
             .iter_mut()
             .filter(|child| child.value == Some(value));
 
-        return matching_branches.next();
+        matching_branches.next()
     }
 
     pub fn get_word(&mut self, string: &str) -> Option<&mut Trie> {
@@ -207,7 +206,7 @@ impl Trie {
         };
 
         let str = String::new();
-        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or(WordFrequencies::new())
+        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or_default()
     }
 
     pub fn get_all_words(&self) -> Vec<String> {
@@ -232,7 +231,7 @@ impl Trie {
         let merge = |x: A, y: A| x.into_iter().chain(y).collect();
 
         let str = String::new();
-        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or(Vec::new())
+        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &str).unwrap_or_default()
     }
 
     pub fn get_all_words_with_containing_substring(&self, substring: &str) -> Vec<String> {
@@ -260,7 +259,7 @@ impl Trie {
         let merge = |x: Vec<String>, y: Vec<String>| x.into_iter().chain(y).collect();
 
         let t: T = (String::new(), false);
-        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &t).unwrap_or(Vec::new())
+        self.traverse(&transform, &merge, &Self::traverse_common_recurse, &t).unwrap_or_default()
     }
 }
 

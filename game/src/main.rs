@@ -3,7 +3,7 @@
 use std::{fs, io};
 use std::{path::Path};
 
-use regex::Regex;
+
 
 use game::GameController;
 use trie::*;
@@ -16,7 +16,7 @@ fn main() {
         fs::read_to_string(words_filename).expect("Couldn't read file at words_filename");
 
     let words = words_file_contents
-        .split("\n")
+        .split('\n')
         .filter(|w| w.len() == 5);
 
     let mut root: Trie = Trie::new_root();
@@ -47,7 +47,7 @@ fn main() {
         println!("Enter your guess for one of the words above or q to quit:");
         
         io::stdin().read_line(&mut user_guess).expect("Failed to read line");
-        println!("");
+        println!();
         user_guess = user_guess.trim().to_string();
         if user_guess.eq("q") {
             break;
@@ -73,7 +73,7 @@ fn main() {
         }
     }
 
-    if missed_words.len() > 0 {
+    if !missed_words.is_empty() {
         println!("These are the ones you missed:");
         for word in missed_words {
             println!("{}", word.word);
